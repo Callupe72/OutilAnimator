@@ -1,5 +1,4 @@
 using UnityEditor;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 public class ListOfAllAnimatorWindowCustomEditor : EditorWindow
@@ -7,6 +6,11 @@ public class ListOfAllAnimatorWindowCustomEditor : EditorWindow
     public AnimatorCustomWindow animatorCustomWindow;
 
     string searchString = "";
+
+    public void RunAtStart()
+    {
+        animatorCustomWindow = GetWindow<AnimatorCustomWindow>();
+    }
 
     void SeeAllAnimators()
     {
@@ -28,6 +32,16 @@ public class ListOfAllAnimatorWindowCustomEditor : EditorWindow
 
     private void OnGUI()
     {
+        if (animatorCustomWindow.anims == null)
+        {
+            return;
+        }
+
+        if (animatorCustomWindow.anims.Count == 0)
+        {
+            return;
+        }
+
         GUILayout.BeginHorizontal(GUI.skin.FindStyle("Toolbar"));
         GUI.backgroundColor = Color.green;
         if (GUILayout.Button("V", GUILayout.Width(50)))

@@ -36,13 +36,33 @@ public class AnimatorCustomWindow : EditorWindow
     float waitTimeBetween2Loop = 0;
     bool isWaitingForDelayUpdate;
 
-    // Add menu named "My Window" to the Window menu
+    //Add menu named "My Window" to the Window menu
     [MenuItem("Paul/Animator Window")]
     static void Init()
     {
         // Get existing open window or if none, make a new one:
         AnimatorCustomWindow window = (AnimatorCustomWindow)EditorWindow.GetWindow(typeof(AnimatorCustomWindow));
         window.Show();
+    }
+    public void RunAtStart()
+    {
+        DestroyListWindow();
+        RefreshAnimatorInScene();
+    }
+
+    void DestroyListWindow()
+    {
+        if (listWindow)
+        {
+            listWindow.Close();
+        }
+        else
+        {
+            if (GetWindow<ListOfAllAnimatorWindowCustomEditor>())
+            {
+                GetWindow<ListOfAllAnimatorWindowCustomEditor>().Close();
+            }
+        }
     }
 
     async void DelayUseAsync()
@@ -104,6 +124,7 @@ public class AnimatorCustomWindow : EditorWindow
                 listWindow = GetWindow<ListOfAllAnimatorWindowCustomEditor>();
                 listWindow.animatorCustomWindow = this;
                 listWindow.Show();
+                RefreshAnimatorInScene();
             }
             else
             {
@@ -280,12 +301,19 @@ public class AnimatorCustomWindow : EditorWindow
         CreateButtonsList();
         EditorApplication.playModeStateChanged += _OnPlayModeStateChange;
         EditorSceneManager.sceneOpened += _ChangeScene;
+        EditorApplication.hierarchyChanged += _ChangedHierarchy;
     }
-    private void OnDisable()
+    void OnDisable()
     {
         EditorApplication.playModeStateChanged -= _OnPlayModeStateChange;
         EditorSceneManager.sceneOpened -= _ChangeScene;
+        EditorApplication.hierarchyChanged -= _ChangedHierarchy;
         StopAnimation();
+    }
+
+    void _ChangedHierarchy()
+    {
+        RefreshAnimatorInScene();
     }
 
     #endregion
@@ -295,7 +323,20 @@ public class AnimatorCustomWindow : EditorWindow
         currentClip = null;
         StopAnimation();
         RefreshAnimatorInScene();
+        if (listWindow == null)
+        {
+            GetListWindow();
+            if (listWindow != null)
+            {
+                listWindow.Close();
+            }
+        }
+    }
 
+
+    void GetListWindow()
+    {
+        listWindow = GetWindow<ListOfAllAnimatorWindowCustomEditor>();
     }
 
     void _OnPlayModeStateChange(PlayModeStateChange state)
@@ -408,12 +449,11 @@ public class AnimatorCustomWindow : EditorWindow
 
     void PlayAnimation()
     {
-        if (selectedObj.Count > 0)
+        if (Selection.gameObjects.Length > 0 && selectedObj.Count > 0)
         {
             if (currentClip != null)
             {
                 AnimationMode.StartAnimationMode();
-
                 CreateCategory("Play Animations", true);
                 CreateAnimationButtons();
                 EditorGUILayout.EndHorizontal();
@@ -535,5 +575,15 @@ public class AnimatorCustomWindow : EditorWindow
     public void ChangeCurrentClip(AnimationClip newClip)
     {
         currentClip = currentClip == newClip ? null : newClip;
+    }
+}
+
+[InitializeOnLoad]
+public class RunAtLaunchAtList : EditorWindow
+{
+    static void Launch()
+    {
+        Debug.Log("Launch");
+        GetWindow<AnimatorCustomWindow>().RunAtStart();
     }
 }
